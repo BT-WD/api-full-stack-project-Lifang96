@@ -28,6 +28,12 @@ const db = getFirestore(app);
 /* === UI === */
 const signOutButtonEl = document.getElementById("sign-out-btn")
 
+/* === GFTS setup === */
+const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
+const axios = require('axios');
+
+const FEED_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw";
+
 /* == UI - Elements == */
 signOutButtonEl.addEventListener("click", authSignOut)
 
