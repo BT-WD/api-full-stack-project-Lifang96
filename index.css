@@ -16,6 +16,15 @@
     --small-button-height: 2px;
     --element-padding: 0.8em;
     --maximum-width: 320px;
+    --mta-blue: #0039A6;
+    --mta-orange: #FF6319;
+    --mta-yellow: #FCCC0A;
+    --mta-red: #EE352E;
+    --mta-green: #00933C;
+    --mta-purple: #B933AD;
+    --mta-grey: #808183;
+    --mta-lightgreen: #6CBE45;
+    --mta-brown: #996633;
 }
 
 html,
@@ -65,29 +74,37 @@ section {
 *
 /*=== User Section === */
 
-.user-section {
+.trip-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.8em;
 }
 
-.user-section img {
+.trip-section img {
     width: 3.75em;
     height: 3.75em;
     border-radius: 100%;
     border: var(--border-width) solid var(--dark-color);
 }
 
-.user-section h2 {
+.trip-section h2 {
     font-size: 1.2em;
+    margin-top: 20px;
 }
 
-#post-input {
+#station-input {
     margin-top: 10px;
     margin-bottom: 10px;
     width: 300px;
-    height: 70px;
+    height: 60px;
+}
+
+#walkingTime-input {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 300px;
+    height: 60px;
 }
 
 
@@ -266,6 +283,124 @@ classes to make the sign out buttons work
 
 #logged-in-view {
     display: none;
+}
+
+
+/* 2-Column Grid Layout */
+
+.mta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+
+/* Individual Selectable Card */
+
+.train-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.train-card:hover {
+    background-color: #f9f9f9;
+    border-color: #bbb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/* Bullet Container */
+
+.symbol-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+
+/* Standard Bullet Styling */
+
+.bullet {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.small-text {
+    font-size: 14px;
+}
+
+.small-text sup {
+    font-size: 8px;
+    margin-left: 1px;
+}
+
+
+/* Line Colors */
+
+.blue {
+    background-color: var(--mta-blue);
+}
+
+.orange {
+    background-color: var(--mta-orange);
+}
+
+.yellow {
+    background-color: var(--mta-yellow);
+    color: black;
+}
+
+
+/* Yellow has black text */
+
+.red {
+    background-color: var(--mta-red);
+}
+
+.green {
+    background-color: var(--mta-green);
+}
+
+.purple {
+    background-color: var(--mta-purple);
+}
+
+.grey {
+    background-color: var(--mta-grey);
+}
+
+.lightgreen {
+    background-color: var(--mta-lightgreen);
+}
+
+.brown {
+    background-color: var(--mta-brown);
+}
+
+
+/* Mobile Responsive */
+
+@media (max-width: 768px) {
+    .mta-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 

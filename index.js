@@ -4,11 +4,7 @@ import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWith
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import { collection, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import GtfsRealtimeBindings from 'https://esm.sh/gtfs-realtime-bindings';
-// Usage example:
-// const docRef = await addDoc(collection(db, "cities"), {
-//   name: "Tokyo",
-//   country: "Japan"
-// });
+
 
 /* === Firebase Setup === */
 const firebaseConfig = {
@@ -46,26 +42,26 @@ const userProfilePictureEl = document.getElementById("user-profile-picture")
 
 const userGreetingEl = document.getElementById("user-greeting")
 
-const textareaEl = document.getElementById("post-input")
-const postButtonEl = document.getElementById("post-btn")
+const stationAreaEl = document.getElementById("station-input")
+const walkTimeAreaEl = document.getElementById("walkingTime-input")
+const getTrainButtonEl = document.getElementById("getTrain-btn")
 
 /* == UI - Event Listeners == */
 
 signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
-
 signInButtonEl.addEventListener("click", authSignInWithEmail)
 createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail)
-postButtonEl.addEventListener("click", postButtonPressed)
-
+getTrainButtonEl.addEventListener("click", postButtonPressed)
+window.selectGroup = selectGroup;
 /* === Main Code === */
 const user = auth.currentUser;
-
+let trainGroup = "";
 onAuthStateChanged(auth, (user) => {
     if (user) {
         showLoggedInView();
         showProfilePicture(userProfilePictureEl, user);
         showUserGreeting(userGreetingEl, user);
-        getMtaData();
+        // getMtaData("Jay St-MetroTech");
     } else {
         showLoggedOutView();
     }
@@ -164,10 +160,11 @@ async function addPostToDB(postBody, user) {
 }
 
 
-async function getMtaData() {
-    const FEED_URL = 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw';
-    const TARGET_STATION = 'R16'; // Times Sq-42 St
-    const TARGET_ROUTES = ['N', 'Q', 'R', 'W'];
+async function getMtaData(stationName, targetRoutes, walkTime) {
+    const endpoint = targetRoutes;
+    const FEED_URL = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
+    const TARGET_STATION = await getStationId(stationName); // Times Sq-42 St
+    // const TARGET_ROUTES = ['N', 'Q', 'R', 'W'];
 
     try {
         const response = await fetch(FEED_URL);
@@ -177,8 +174,8 @@ async function getMtaData() {
         const arrivals = [];
 
         feed.entity.forEach((entity) => {
-            if (entity.tripUpdate && TARGET_ROUTES.includes(entity.tripUpdate.trip.routeId)) {
-
+            if (entity.tripUpdate && targetRoutes.includes(entity.tripUpdate.trip.routeId.toLowerCase())) {
+                console.log(entity.tripUpdate.trip.routeId.toLowerCase());
                 entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
                     // Check if this stop matches our target station (ignoring direction N/S for now)
                     if (stop.stopId.startsWith(TARGET_STATION)) {
@@ -202,16 +199,37 @@ async function getMtaData() {
         // Sort by arrival time (soonest first)
         arrivals.sort((a, b) => a.time - b.time);
 
-        console.clear();
-        console.log(`--- Live Board: ${TARGET_STATION} ---`);
+        // console.clear();
+        console.log(`-- - Live Board: ${stationName}-- - `);
         arrivals.forEach(a => {
-            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'} [${a.route}] ${a.time} min`);
+            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'}[${a.route}] ${a.time} min `);
         });
 
     } catch (error) {
         console.error("Error fetching station data:", error);
     }
-}
+};
+
+async function getStationId(stationName, targetRoutes) {
+    try {
+        console.log(stationName);
+        const response = await fetch('stations.json');
+        const data = await response.json();
+        for (const station of Object.values(data)) {
+            if (station.name == stationName) {
+                for (let stop in station.stops) {
+                    console.log(stop.substring(0, 1) == 'R');
+                    if (stop.substring(0, 1) == 'R') {
+                        return stop
+                    }
+                }
+
+            }
+        }
+    } catch (error) {
+        console.error('Error loading JSON:', error);
+    }
+};
 
 
 /* == Functions - UI Functions == */
@@ -235,11 +253,15 @@ function hideView(view) {
 }
 
 function postButtonPressed() {
-    const postBody = textareaEl.value;
-    const user = auth.currentUser
+    const destination = stationAreaEl.value;
+    const walkTime = walkTimeAreaEl.value;
 
-    if (postBody) {
-        addPostToDB(postBody, user);
-        textareaEl.value = "";
+    if (destination && walkTime && trainGroup) {
+        getMtaData(destination, trainGroup, walkTime);
     }
+}
+
+
+function selectGroup(group) {
+    trainGroup = group;
 }

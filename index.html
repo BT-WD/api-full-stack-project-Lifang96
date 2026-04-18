@@ -42,9 +42,67 @@
                         <h2 id="user-greeting"></h2>
                     </div>
                 </div>
-                <div class="post-section">
-                    <textarea id="post-input" placeholder="Write down how you're feeling..."></textarea>
-                    <button id="post-btn" class="primary-btn">Post</button>
+                <div class="trip-section">
+                    <h2>Station:</h2>
+                    <input id="station-input" placeholder="Station Destination"></input>
+                    <input id="walkingTime-input" placeholder="Time it takes: HH:MM:SS"></input>
+                    
+                    <div class="mta-grid">
+                        <div class="train-card" onclick="selectGroup('ace')">
+                            <div class="symbol-container">
+                                <span class="bullet blue">A</span>
+                                <span class="bullet blue">C</span>
+                                <span class="bullet blue">E</span>
+                                <span class="bullet grey small-text">S<sup>R</sup></span>
+                            </div>
+                        </div>
+
+                        <div class="train-card" onclick="selectGroup('bdfm')">
+                            <div class="symbol-container">
+                                <span class="bullet orange">B</span>
+                                <span class="bullet orange">D</span>
+                                <span class="bullet orange">F</span>
+                                <span class="bullet orange">M</span>
+                                <span class="bullet grey small-text">S<sup>F</sup></span>
+                            </div>
+                        </div>
+
+                        <div class="train-card" onclick="selectGroup('nqrw')">
+                            <div class="symbol-container">
+                                <span class="bullet yellow">N</span>
+                                <span class="bullet yellow">Q</span>
+                                <span class="bullet yellow">R</span>
+                                <span class="bullet yellow">W</span>
+                            </div>
+                        </div>
+
+                        <div class="train-card" onclick="selectGroup('numbered')">
+                            <div class="symbol-container">
+                                <span class="bullet red">1</span>
+                                <span class="bullet red">2</span>
+                                <span class="bullet red">3</span>
+                                <span class="bullet green">4</span>
+                                <span class="bullet green">5</span>
+                                <span class="bullet green">6</span>
+                                <span class="bullet purple">7</span>
+                            </div>
+                        </div>
+
+                        <div class="train-card" onclick="selectGroup('g')">
+                            <div class="symbol-container">
+                                <span class="bullet lightgreen">G</span>
+                            </div>
+                        </div>
+
+                        <div class="train-card" onclick="selectGroup('jz')">
+                            <div class="symbol-container">
+                                <span class="bullet brown">J</span>
+                                <span class="bullet brown">Z</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="getTrain-btn" class="primary-btn">Get Trains</button>
                 </div>
             </div>
         </section>
