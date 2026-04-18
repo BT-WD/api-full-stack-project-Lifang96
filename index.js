@@ -43,19 +43,29 @@ const userProfilePictureEl = document.getElementById("user-profile-picture")
 const userGreetingEl = document.getElementById("user-greeting")
 
 const stationAreaEl = document.getElementById("station-input")
-const walkTimeAreaEl = document.getElementById("walkingTime-input")
+const walkTimeHHAreaEl = document.getElementById("hh")
+const walkTimeMMAreaEl = document.getElementById("mm")
+const walkTimeSSAreaEl = document.getElementById("ss")
 const getTrainButtonEl = document.getElementById("getTrain-btn")
 
 /* == UI - Event Listeners == */
 
-signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
-signInButtonEl.addEventListener("click", authSignInWithEmail)
-createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail)
-getTrainButtonEl.addEventListener("click", postButtonPressed)
+signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle);
+signInButtonEl.addEventListener("click", authSignInWithEmail);
+createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail);
+getTrainButtonEl.addEventListener("click", postButtonPressed);
 window.selectGroup = selectGroup;
 /* === Main Code === */
 const user = auth.currentUser;
 let trainGroup = "";
+let prevDestination = '';
+const stationIdStart = {
+    'nqrw': ['R', 'N', 'Q', 'W'],
+    'ace': ['A', 'C', 'E'],
+    'bdfm': ['B', 'D', 'F'],
+    'jz': ['M'],
+    'g': ['G']
+}
 onAuthStateChanged(auth, (user) => {
     if (user) {
         showLoggedInView();
@@ -163,33 +173,38 @@ async function addPostToDB(postBody, user) {
 async function getMtaData(stationName, targetRoutes, walkTime) {
     const endpoint = targetRoutes;
     const FEED_URL = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
-    const TARGET_STATION = await getStationId(stationName); // Times Sq-42 St
-    // const TARGET_ROUTES = ['N', 'Q', 'R', 'W'];
-
+    const TARGET_STATION = await getStationId(stationName, targetRoutes); // Times Sq-42 St
     try {
         const response = await fetch(FEED_URL);
         const buffer = await response.arrayBuffer();
         const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(buffer));
 
         const arrivals = [];
+        const matchArrivals = [];
 
         feed.entity.forEach((entity) => {
             if (entity.tripUpdate && targetRoutes.includes(entity.tripUpdate.trip.routeId.toLowerCase())) {
-                console.log(entity.tripUpdate.trip.routeId.toLowerCase());
+
                 entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
                     // Check if this stop matches our target station (ignoring direction N/S for now)
                     if (stop.stopId.startsWith(TARGET_STATION)) {
                         const arrivalTime = stop.arrival.time;
                         if (arrivalTime) {
                             const minutesAway = Math.round((arrivalTime - Math.floor(Date.now() / 1000)) / 60);
-
                             if (minutesAway >= 0) {
                                 arrivals.push({
                                     route: entity.tripUpdate.trip.routeId,
                                     direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
                                     time: minutesAway
                                 });
-                            }
+                            };
+                            if (walkTime + 7 >= minutesAway && walkTime - 3 <= minutesAway) {
+                                matchArrivals.push({
+                                    route: entity.tripUpdate.trip.routeId,
+                                    direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
+                                    time: minutesAway
+                                });
+                            };
                         }
                     }
                 });
@@ -198,12 +213,19 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
 
         // Sort by arrival time (soonest first)
         arrivals.sort((a, b) => a.time - b.time);
+        matchArrivals.sort((a, b) => a.time - b.time);
+        console.log(arrivals)
+        if (prevDestination == stationName) {
+            document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
+        } else {
+            prevDestination = stationName;
+            document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
+            document.getElementById('north-train-list').innerHTML = '';
+            document.getElementById('south-train-list').innerHTML = '';
+        }
 
-        // console.clear();
-        console.log(`-- - Live Board: ${stationName}-- - `);
-        arrivals.forEach(a => {
-            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'}[${a.route}] ${a.time} min `);
-        });
+        updateMatchArrival(matchArrivals);
+
 
     } catch (error) {
         console.error("Error fetching station data:", error);
@@ -211,15 +233,16 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
 };
 
 async function getStationId(stationName, targetRoutes) {
+
     try {
-        console.log(stationName);
+
         const response = await fetch('stations.json');
         const data = await response.json();
         for (const station of Object.values(data)) {
-            if (station.name == stationName) {
+            if (stationName.includes(station.name)) {
+                console.log(station.name);
                 for (let stop in station.stops) {
-                    console.log(stop.substring(0, 1) == 'R');
-                    if (stop.substring(0, 1) == 'R') {
+                    if (stationIdStart[targetRoutes].includes(stop.substring(0, 1))) {
                         return stop
                     }
                 }
@@ -252,11 +275,42 @@ function hideView(view) {
     view.style.display = "none";
 }
 
+function updateMatchArrival(matchArrivals) {
+    if (matchArrivals.length != 0) {
+        document.getElementById("live-board").style.display = "block";
+        matchArrivals.forEach(a => {
+            const direction = a.direction === 'Northbound' ? '▲' : '▼';
+            const route = a.route;
+            const time = a.time;
+            if (direction == '▲') {
+                document.getElementById('north-train-list').innerHTML += `<li id='trains-bullet'>${direction} ${route} ${time} min</li>`
+            } else {
+                document.getElementById('south-train-list').innerHTML += `<li id='trains-bullet'>${direction} ${route} ${time} min</li>`
+            }
+        });
+    } else {
+        console.log(`No data trains: ${targetRoutes.toUpperCase()}`);
+    }
+}
+
+function updateArrival(arrivals) {
+    if (arrivals.length != 0) {
+        arrivals.forEach(a => {
+            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'}[${a.route}] ${a.time} min `);
+        });
+    } else {
+        console.log(`No data trains: ${targetRoutes.toUpperCase()}`);
+    }
+}
+
 function postButtonPressed() {
     const destination = stationAreaEl.value;
-    const walkTime = walkTimeAreaEl.value;
+    const walkTimeHH = parseInt(walkTimeHHAreaEl.value || '00', 10);
+    const walkTimeMM = parseInt(walkTimeMMAreaEl.value || '00', 10);
+    const walkTimeSS = parseInt(walkTimeSSAreaEl.value || '00', 10);
+    const walkTime = (walkTimeHH * 60) + (walkTimeMM);
 
-    if (destination && walkTime && trainGroup) {
+    if (destination && trainGroup && walkTime) {
         getMtaData(destination, trainGroup, walkTime);
     }
 }

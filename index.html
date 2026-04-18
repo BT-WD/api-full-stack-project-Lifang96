@@ -45,7 +45,20 @@
                 <div class="trip-section">
                     <h2>Station:</h2>
                     <input id="station-input" placeholder="Station Destination"></input>
-                    <input id="walkingTime-input" placeholder="Time it takes: HH:MM:SS"></input>
+
+                    <span class="label">Time it takes:</span>
+                    <div class="time-picker-container">
+                        
+                            <span class="unit-label">HH:</span>
+                            <input type="text" id="hh" class="time-box" placeholder="00" maxlength="2" default='00'>
+                            
+                            <span class="unit-label">MM:</span>
+                            <input type="text" id="mm" class="time-box" placeholder="00" maxlength="2" default='00'>
+                            
+                            <span class="unit-label">SS:</span>
+                            <input type="text" id="ss" class="time-box" placeholder="00" maxlength="2" default='00'>
+                    </div>
+
                     
                     <div class="mta-grid">
                         <div class="train-card" onclick="selectGroup('ace')">
@@ -103,7 +116,23 @@
                     </div>
 
                     <button id="getTrain-btn" class="primary-btn">Get Trains</button>
+
                 </div>
+
+                <div id="live-board" class="board-container" style="display: none;">
+                    <h2 id="station-title">8 Av</h2>
+                    <div class="columns-wrapper">
+                        <div class="column" id="northbound-col">
+                            <h3>▲ Northbound</h3>
+                            <div id="north-train-list"></div>
+                        </div>
+                        <div class="column" id="southbound-col">
+                            <h3>▼ Southbound</h3>
+                            <div id="south-train-list"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
         <script src="index.js" type="module"></script>

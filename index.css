@@ -394,6 +394,17 @@ classes to make the sign out buttons work
     background-color: var(--mta-brown);
 }
 
+.time-picker-container {
+    display: flex;
+}
+
+#hh,
+#mm,
+#ss {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
 
 /* Mobile Responsive */
 
@@ -401,6 +412,41 @@ classes to make the sign out buttons work
     .mta-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.board-container {
+    background-color: #1a1a1a;
+    /* Dark theme like your screenshot */
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin-top: 20px;
+}
+
+.columns-wrapper {
+    display: flex;
+    /* Flexbox for side-by-side columns */
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.column {
+    flex: 1;
+}
+
+.train-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #333;
+}
+
+#trains-bullet {
+    margin-left: 20px;
+    margin-bottom: 20px;
 }
 
 
