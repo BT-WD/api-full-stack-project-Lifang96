@@ -227,12 +227,13 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
         // Sort by arrival time (soonest first)
         arrivals.sort((a, b) => a.time - b.time);
         matchArrivals.sort((a, b) => a.time - b.time);
-
-        if (prevDestination == stationName) {
+        console.log(prevWalkTime, walkTime, prevDestination, stationName)
+        if (prevDestination == stationName && walkTime == prevDestination) {
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
         } else if (prevWalkTime != walkTime) {
             prevDestination = stationName;
             prevWalkTime = walkTime;
+            console.log('hit');
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
             document.getElementById('north-train-list').innerHTML = '';
             document.getElementById('south-train-list').innerHTML = '';
