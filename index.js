@@ -59,19 +59,20 @@ window.selectGroup = selectGroup;
 const user = auth.currentUser;
 let trainGroup = "";
 let prevDestination = '';
+let prevWalkTime = '';
 const stationIdStart = {
     'nqrw': ['R', 'N', 'Q', 'W'],
     'ace': ['A', 'C', 'E'],
     'bdfm': ['B', 'D', 'F'],
     'jz': ['M'],
-    'g': ['G']
+    'g': ['G'],
+    'numbered': ["1", "2", "3", "4", "5", '6', '7']
 }
 onAuthStateChanged(auth, (user) => {
     if (user) {
         showLoggedInView();
         showProfilePicture(userProfilePictureEl, user);
         showUserGreeting(userGreetingEl, user);
-        // getMtaData("Jay St-MetroTech");
     } else {
         showLoggedOutView();
     }
@@ -171,11 +172,19 @@ async function addPostToDB(postBody, user) {
 
 
 async function getMtaData(stationName, targetRoutes, walkTime) {
-    const endpoint = targetRoutes;
-    const FEED_URL = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
+    let endpoint = targetRoutes;
+    const prevRoute = targetRoutes;
+    let feed_url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs"
     const TARGET_STATION = await getStationId(stationName, targetRoutes); // Times Sq-42 St
+    targetRoutes = stationIdStart[targetRoutes]
+
+    if (endpoint != 'numbered') {
+        endpoint = prevRoute
+        feed_url = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
+        targetRoutes = prevRoute;
+    }
     try {
-        const response = await fetch(FEED_URL);
+        const response = await fetch(feed_url);
         const buffer = await response.arrayBuffer();
         const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(buffer));
 
@@ -188,24 +197,28 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
                 entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
                     // Check if this stop matches our target station (ignoring direction N/S for now)
                     if (stop.stopId.startsWith(TARGET_STATION)) {
-                        const arrivalTime = stop.arrival.time;
-                        if (arrivalTime) {
-                            const minutesAway = Math.round((arrivalTime - Math.floor(Date.now() / 1000)) / 60);
-                            if (minutesAway >= 0) {
-                                arrivals.push({
-                                    route: entity.tripUpdate.trip.routeId,
-                                    direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
-                                    time: minutesAway
-                                });
-                            };
-                            if (walkTime + 7 >= minutesAway && walkTime - 3 <= minutesAway) {
-                                matchArrivals.push({
-                                    route: entity.tripUpdate.trip.routeId,
-                                    direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
-                                    time: minutesAway
-                                });
-                            };
-                        }
+
+                        try {
+                            const arrivalTime = stop.arrival.time;
+                            if (arrivalTime) {
+                                const minutesAway = Math.round((arrivalTime - Math.floor(Date.now() / 1000)) / 60);
+
+                                if (minutesAway >= 0) {
+                                    arrivals.push({
+                                        route: entity.tripUpdate.trip.routeId,
+                                        direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
+                                        time: minutesAway
+                                    });
+                                };
+                                if (walkTime + 7 >= minutesAway && walkTime - 3 <= minutesAway) {
+                                    matchArrivals.push({
+                                        route: entity.tripUpdate.trip.routeId,
+                                        direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
+                                        time: minutesAway
+                                    });
+                                };
+                            }
+                        } catch { console.log("arrival error") }
                     }
                 });
             }
@@ -214,9 +227,15 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
         // Sort by arrival time (soonest first)
         arrivals.sort((a, b) => a.time - b.time);
         matchArrivals.sort((a, b) => a.time - b.time);
-        console.log(arrivals)
+
         if (prevDestination == stationName) {
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
+        } else if (prevWalkTime != walkTime) {
+            prevDestination = stationName;
+            prevWalkTime = walkTime;
+            document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
+            document.getElementById('north-train-list').innerHTML = '';
+            document.getElementById('south-train-list').innerHTML = '';
         } else {
             prevDestination = stationName;
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
