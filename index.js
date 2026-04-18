@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/fireba
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import { collection, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
-
+import GtfsRealtimeBindings from 'https://esm.sh/gtfs-realtime-bindings';
 // Usage example:
 // const docRef = await addDoc(collection(db, "cities"), {
 //   name: "Tokyo",
@@ -27,12 +27,6 @@ const db = getFirestore(app);
 
 /* === UI === */
 const signOutButtonEl = document.getElementById("sign-out-btn")
-
-/* === GFTS setup === */
-const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
-const axios = require('axios');
-
-const FEED_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw";
 
 /* == UI - Elements == */
 signOutButtonEl.addEventListener("click", authSignOut)
@@ -71,6 +65,7 @@ onAuthStateChanged(auth, (user) => {
         showLoggedInView();
         showProfilePicture(userProfilePictureEl, user);
         showUserGreeting(userGreetingEl, user);
+        getMtaData();
     } else {
         showLoggedOutView();
     }
@@ -165,6 +160,56 @@ async function addPostToDB(postBody, user) {
         console.log("Document written with ID: ", docRef.id);
     } catch (e) {
         console.error("Error adding document: ", e);
+    }
+}
+
+
+async function getMtaData() {
+    const FEED_URL = 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw';
+    const TARGET_STATION = 'R16'; // Times Sq-42 St
+    const TARGET_ROUTES = ['N', 'Q', 'R', 'W'];
+
+    try {
+        const response = await fetch(FEED_URL);
+        const buffer = await response.arrayBuffer();
+        const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(new Uint8Array(buffer));
+
+        const arrivals = [];
+
+        feed.entity.forEach((entity) => {
+            if (entity.tripUpdate && TARGET_ROUTES.includes(entity.tripUpdate.trip.routeId)) {
+
+                entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
+                    // Check if this stop matches our target station (ignoring direction N/S for now)
+                    if (stop.stopId.startsWith(TARGET_STATION)) {
+                        const arrivalTime = stop.arrival.time;
+                        if (arrivalTime) {
+                            const minutesAway = Math.round((arrivalTime - Math.floor(Date.now() / 1000)) / 60);
+
+                            if (minutesAway >= 0) {
+                                arrivals.push({
+                                    route: entity.tripUpdate.trip.routeId,
+                                    direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
+                                    time: minutesAway
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        // Sort by arrival time (soonest first)
+        arrivals.sort((a, b) => a.time - b.time);
+
+        console.clear();
+        console.log(`--- Live Board: ${TARGET_STATION} ---`);
+        arrivals.forEach(a => {
+            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'} [${a.route}] ${a.time} min`);
+        });
+
+    } catch (error) {
+        console.error("Error fetching station data:", error);
     }
 }
 
