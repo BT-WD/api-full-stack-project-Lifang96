@@ -258,7 +258,7 @@ async function getStationId(stationName, targetRoutes) {
         const response = await fetch('stations.json');
         const data = await response.json();
         for (const station of Object.values(data)) {
-            if (stationName.includes(station.name)) {
+            if (stationName.toLowerCase().includes(station.name.toLowerCase())) {
                 console.log(station.name);
                 for (let stop in station.stops) {
                     if (stationIdStart[targetRoutes].includes(stop.substring(0, 1))) {
