@@ -138,7 +138,7 @@ function showProfilePicture(imgElement, user) {
         if (photoURL) {
             imgElement.src = photoURL;
         } else {
-            imgElement.src = 'assets/images/defaultPic.jpg';
+            imgElement.src = 'assets/images/travel.png';
         }
     }
 }
@@ -150,7 +150,7 @@ function showUserGreeting(element, user) {
         if (displayName) {
             element.textContent = `Hi ${displayName}`;
         } else {
-            element.textContent = "Hey friend, how are you?";
+            element.textContent = "Personal Travel App";
         }
     }
 }
@@ -177,7 +177,6 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
     let feed_url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs"
     const TARGET_STATION = await getStationId(stationName, targetRoutes); // Times Sq-42 St
     targetRoutes = stationIdStart[targetRoutes]
-
     if (endpoint != 'numbered') {
         endpoint = prevRoute
         feed_url = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
@@ -200,6 +199,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
 
                         try {
                             const arrivalTime = stop.arrival.time;
+
                             if (arrivalTime) {
                                 const minutesAway = Math.round((arrivalTime - Math.floor(Date.now() / 1000)) / 60);
 
@@ -210,7 +210,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
                                         time: minutesAway
                                     });
                                 };
-                                if (walkTime + 7 >= minutesAway && walkTime - 3 <= minutesAway) {
+                                if (walkTime + 10 >= minutesAway && walkTime - 4 <= minutesAway) {
                                     matchArrivals.push({
                                         route: entity.tripUpdate.trip.routeId,
                                         direction: stop.stopId.endsWith('N') ? 'Northbound' : 'Southbound',
@@ -227,24 +227,21 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
         // Sort by arrival time (soonest first)
         arrivals.sort((a, b) => a.time - b.time);
         matchArrivals.sort((a, b) => a.time - b.time);
-        console.log(prevWalkTime, walkTime, prevDestination, stationName)
-        if (prevDestination == stationName && walkTime == prevDestination) {
-            document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
-        } else if (prevWalkTime != walkTime) {
+
+        if (prevDestination != stationName) {
             prevDestination = stationName;
-            prevWalkTime = walkTime;
-            console.log('hit');
+            prevWalkTime = walkTime
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
             document.getElementById('north-train-list').innerHTML = '';
             document.getElementById('south-train-list').innerHTML = '';
-        } else {
-            prevDestination = stationName;
+        } else if (prevWalkTime != walkTime) {
+            prevWalkTime = walkTime
             document.getElementById('station-title').textContent = `Live Board: ${stationName}`;
             document.getElementById('north-train-list').innerHTML = '';
             document.getElementById('south-train-list').innerHTML = '';
         }
 
-        updateMatchArrival(matchArrivals);
+        updateMatchArrival(matchArrivals, targetRoutes);
 
 
     } catch (error) {
@@ -295,8 +292,10 @@ function hideView(view) {
     view.style.display = "none";
 }
 
-function updateMatchArrival(matchArrivals) {
+function updateMatchArrival(matchArrivals, targetRoutes) {
+
     if (matchArrivals.length != 0) {
+
         document.getElementById("live-board").style.display = "block";
         matchArrivals.forEach(a => {
             const direction = a.direction === 'Northbound' ? '▲' : '▼';
@@ -313,15 +312,6 @@ function updateMatchArrival(matchArrivals) {
     }
 }
 
-function updateArrival(arrivals) {
-    if (arrivals.length != 0) {
-        arrivals.forEach(a => {
-            console.log(`${a.direction === 'Northbound' ? '▲' : '▼'}[${a.route}] ${a.time} min `);
-        });
-    } else {
-        console.log(`No data trains: ${targetRoutes.toUpperCase()}`);
-    }
-}
 
 function postButtonPressed() {
     const destination = stationAreaEl.value;
