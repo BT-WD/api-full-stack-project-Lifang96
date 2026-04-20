@@ -182,6 +182,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
         feed_url = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
         targetRoutes = prevRoute;
     }
+    console.log(TARGET_STATION, feed_url);
     try {
         const response = await fetch(feed_url);
         const buffer = await response.arrayBuffer();
@@ -196,7 +197,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
                 entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
                     // Check if this stop matches our target station (ignoring direction N/S for now)
                     if (stop.stopId.startsWith(TARGET_STATION)) {
-
+            
                         try {
                             const arrivalTime = stop.arrival.time;
 
@@ -308,7 +309,7 @@ function updateMatchArrival(matchArrivals, targetRoutes) {
             }
         });
     } else {
-        console.log(`No data trains: ${targetRoutes.toUpperCase()}`);
+        console.log(`No data trains: ${targetRoutes}`);
     }
 }
 
