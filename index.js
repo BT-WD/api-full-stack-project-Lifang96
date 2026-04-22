@@ -56,7 +56,7 @@ createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail);
 getTrainButtonEl.addEventListener("click", postButtonPressed);
 window.selectGroup = selectGroup;
 /* === Main Code === */
-const user = auth.currentUser;
+let user = auth.currentUser;
 let trainGroup = "";
 let prevDestination = '';
 let prevWalkTime = '';
@@ -95,6 +95,7 @@ function authSignInWithEmail() {
         .then((userCredential) => {
             // Signed in 
             showLoggedInView();
+            console.log(user)
         })
         .catch((error) => {
             const errorMessage = error.message;
@@ -110,7 +111,6 @@ function authCreateAccountWithEmail() {
         .then((userCredential) => {
             // Signed up 
             showLoggedInView();
-
         })
         .catch((error) => {
             const errorMessage = error.message;
@@ -155,11 +155,10 @@ function showUserGreeting(element, user) {
     }
 }
 
-async function addPostToDB(postBody, user) {
+async function addPostToDB(destination, user) {
     try {
-
-        const docRef = await addDoc(collection(db, "posts"), {
-            body: postBody,
+        const docRef = await addDoc(collection(db, "stations"), {
+            body: destination,
             uid: user.uid,
             createdAt: serverTimestamp()
         });
@@ -320,9 +319,11 @@ function postButtonPressed() {
     const walkTimeMM = parseInt(walkTimeMMAreaEl.value || '00', 10);
     const walkTimeSS = parseInt(walkTimeSSAreaEl.value || '00', 10);
     const walkTime = (walkTimeHH * 60) + (walkTimeMM);
+    user = auth.currentUser;
 
     if (destination && trainGroup && walkTime) {
         getMtaData(destination, trainGroup, walkTime);
+        addPostToDB(destination, user);
     }
 }
 
