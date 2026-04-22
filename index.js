@@ -4,8 +4,8 @@ import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWith
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import { collection, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import GtfsRealtimeBindings from 'https://esm.sh/gtfs-realtime-bindings';
-
-
+// import { db } from './firebase-config.js';
+import {  doc, setDoc, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 /* === Firebase Setup === */
 const firebaseConfig = {
     apiKey: "AIzaSyBbeI1pjhIaXk7kmfIK4fRGshhppPJbtAE",
@@ -60,6 +60,11 @@ let user = auth.currentUser;
 let trainGroup = "";
 let prevDestination = '';
 let prevWalkTime = '';
+
+const input = document.getElementById('station-input');
+const listContainer = document.getElementById('autocomplete-list');
+const suggestionsBody = document.getElementById('suggestions-body');
+
 const stationIdStart = {
     'nqrw': ['R', 'N', 'Q', 'W'],
     'ace': ['A', 'C', 'E'],
@@ -95,6 +100,8 @@ function authSignInWithEmail() {
         .then((userCredential) => {
             // Signed in 
             showLoggedInView();
+            user = auth.currentUser;
+            console.log(userCredential)
             console.log(user)
         })
         .catch((error) => {
@@ -111,6 +118,7 @@ function authCreateAccountWithEmail() {
         .then((userCredential) => {
             // Signed up 
             showLoggedInView();
+            user = auth.currentUser;
         })
         .catch((error) => {
             const errorMessage = error.message;
@@ -270,6 +278,55 @@ async function getStationId(stationName, targetRoutes) {
         console.error('Error loading JSON:', error);
     }
 };
+
+input.addEventListener('input', async () => {
+    const val = input.value.toLowerCase();
+    user = auth.currentUser;
+    console.log(user.uid)
+    suggestionsBody.innerHTML = ''; // Clear previous
+
+    if (!val || val.length < 1) {
+        listContainer.style.display = 'none';
+        return;
+    }
+
+    // 1. Get the user's saved stations from Firestore
+    // Replace YOUR_USER_ID with your actual auth variable
+    const q = query(collection(db, "stations"), where("uid", "==", "LkbYxXa94bg9yydztTKhqkGocMu1"));
+    const querySnapshot = await getDocs(q);
+
+    let hasResults = false;
+
+    querySnapshot.forEach((doc) => {
+        const stationName = doc.data().body; // e.g. "Atlantic Av-Barclays Ctr"
+        
+        // 2. Simple word-match logic
+        if (stationName.toLowerCase().includes(val)) {
+            hasResults = true;
+            const item = document.createElement('div');
+            item.className = 'suggestion-item';
+            item.textContent = stationName;
+            
+            // Handle clicking a suggestion
+            item.addEventListener('click', () => {
+                input.value = stationName;
+                listContainer.style.display = 'none';
+                // Trigger your train search logic here
+                console.log("Searching for:", stationName);
+            });
+            
+            suggestionsBody.appendChild(item);
+        }
+    });
+
+    listContainer.style.display = hasResults ? 'block' : 'none';
+});
+
+// Close when clicking outside
+document.addEventListener('click', (e) => {
+    if (e.target !== input) listContainer.style.display = 'none';
+});
+
 
 
 /* == Functions - UI Functions == */
