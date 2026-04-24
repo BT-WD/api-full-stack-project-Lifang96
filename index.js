@@ -5,7 +5,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.11.0/firebas
 import { collection, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 import GtfsRealtimeBindings from 'https://esm.sh/gtfs-realtime-bindings';
 // import { db } from './firebase-config.js';
-import {  doc, setDoc, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
+import { doc, setDoc, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js';
 /* === Firebase Setup === */
 const firebaseConfig = {
     apiKey: "AIzaSyBbeI1pjhIaXk7kmfIK4fRGshhppPJbtAE",
@@ -204,7 +204,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
                 entity.tripUpdate.stopTimeUpdate.forEach((stop) => {
                     // Check if this stop matches our target station (ignoring direction N/S for now)
                     if (stop.stopId.startsWith(TARGET_STATION)) {
-            
+
                         try {
                             const arrivalTime = stop.arrival.time;
 
@@ -278,11 +278,10 @@ async function getStationId(stationName, targetRoutes) {
         console.error('Error loading JSON:', error);
     }
 };
-
-input.addEventListener('input', async () => {
+let items = [];
+input.addEventListener('input', async() => {
     const val = input.value.toLowerCase();
     user = auth.currentUser;
-    console.log(user.uid)
     suggestionsBody.innerHTML = ''; // Clear previous
 
     if (!val || val.length < 1) {
@@ -292,29 +291,32 @@ input.addEventListener('input', async () => {
 
     // 1. Get the user's saved stations from Firestore
     // Replace YOUR_USER_ID with your actual auth variable
-    const q = query(collection(db, "stations"), where("uid", "==", "LkbYxXa94bg9yydztTKhqkGocMu1"));
+    const q = query(collection(db, "stations"), where("uid", "==", `${user.uid}`));
     const querySnapshot = await getDocs(q);
 
     let hasResults = false;
-
+    items = [];
     querySnapshot.forEach((doc) => {
         const stationName = doc.data().body; // e.g. "Atlantic Av-Barclays Ctr"
-        
         // 2. Simple word-match logic
-        if (stationName.toLowerCase().includes(val)) {
+        if (stationName.toLowerCase().includes(val) && (items.indexOf(stationName) == -1)) {
+            items.push(stationName);
             hasResults = true;
             const item = document.createElement('div');
             item.className = 'suggestion-item';
             item.textContent = stationName;
-            
+            item.style.backgroundColor = 'white';
+            item.style.margin = '15px';
+
             // Handle clicking a suggestion
             item.addEventListener('click', () => {
                 input.value = stationName;
                 listContainer.style.display = 'none';
+                suggestionsBody.innerHTML = '';
                 // Trigger your train search logic here
                 console.log("Searching for:", stationName);
             });
-            
+
             suggestionsBody.appendChild(item);
         }
     });
@@ -326,8 +328,6 @@ input.addEventListener('input', async () => {
 document.addEventListener('click', (e) => {
     if (e.target !== input) listContainer.style.display = 'none';
 });
-
-
 
 /* == Functions - UI Functions == */
 
