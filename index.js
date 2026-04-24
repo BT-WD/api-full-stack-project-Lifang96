@@ -189,7 +189,7 @@ async function getMtaData(stationName, targetRoutes, walkTime) {
         feed_url = `https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-${endpoint}`;
         targetRoutes = prevRoute;
     }
-    console.log(TARGET_STATION, feed_url);
+
     try {
         const response = await fetch(feed_url);
         const buffer = await response.arrayBuffer();
